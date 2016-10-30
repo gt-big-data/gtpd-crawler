@@ -1,6 +1,7 @@
 # This file is the main driver the crawls GTPD logs and stores things in the database.
 import re
 from datetime import datetime
+from sys import argv
 
 import requests
 from bs4 import BeautifulSoup as Soup
@@ -10,6 +11,7 @@ import db
 # This is the base URL where we grab data from.
 # Note the wildcard page number at the end.
 CRIMINAL_LOGS_URL = 'http://www.police.gatech.edu/crimeinfo/crimelogs/crimelog.php?offset=%d'
+NON_CRIMINAL_LOGS_URL = 'http://www.police.gatech.edu/crimeinfo/crimelogs/noncrimelog.php?offset=%d'
 
 # This selector returns the same thing in browsers and `html.parser`.
 # For a more robust parser, deal with installing `lxml`.
@@ -143,7 +145,7 @@ def scrape_criminal_page(offset):
         new_records += 1 - result.matched_count
     return new_records, len(records)
 
-def scrape_non_criminal_page(html):
+def scrape_non_criminal_page(offset):
     """
     Scrape a page of non-criminal logs starting from `offset`.
 
@@ -167,18 +169,33 @@ def scrape_non_criminal_page(html):
         new_records += 1 - result.matched_count
     return new_records, len(records)
 
+def print_usage():
+    print(argv[0] + ' <criminal/non-criminal> [offset]')
+    return -1
+
 def main():
-    # TODO: Call scrape_[non]_criminal_page(offset) in a loop.
+    if len(argv) < 2:
+        return print_usage()
+    type = argv[1]
+    if type == 'criminal':
+        scrape_function = scrape_criminal_page
+    elif type == 'non-criminal':
+        scrape_function = scrape_non_criminal_page
+    else:
+        return print_usage()
+
+    try:
+        offset = int(argv[2])
+    except Exception:
+        offset = 0
     # Keep scraping pages until no new records are found.
     # When we hit the end of the list (or the beginning of the list we've already processed),
     # we will add 0 new records.
-    # NOTE: If something goes awry, temporary change this value to whatever the last value it printed was.
-    offset = 4100
     new_records = -1
     while new_records != 0:
         # There's 100 records on every page. Don't question it.
         print('Scraping records from %d to %d' % (offset, offset + 100))
-        new_records, total_records = scrape_criminal_page(offset)
+        new_records, total_records = scrape_function(offset)
         offset += total_records
     print('Stopping becuase there are no new records to crawl.')
 
