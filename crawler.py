@@ -26,18 +26,25 @@ def to_date(s):
     DATE_FORMAT = '%m %d %Y %H %M'
     # Convert whatever mess of a date string we are given into "mm dd yyyy [hh mm]".
     s = clean(s)
-    if len(s.split(' ')) == 3:
+    parts = len(s.split(' '))
+    if parts <= 1:
+        # We've acquired an empty string. Pretend it doesn't exist.
+        return None
+    if parts == 3:
         # This record is missing a time component.
         # Can be a poorly formed start/end date or just a regular reported date.
         # Handle it by setting it to midnight of that day.
         s += ' 00 00'
+    if parts > 5:
+        # Something is very malformed, just take the first portion and hope it's a valid date.
+        # e.g. "5/5/2016 @ 22:52   @ 23:00" => "5 5 2016 22 52 23 00" => "5 5 2016 22 52".
+        s = ' '.join(s.split(' ')[:5])
     return datetime.strptime(s, DATE_FORMAT)
 
 def parse_occurred_info(occurred_info):
     # `clean(...)` strips a lot of stuff out so this becomes the correct format.
 
     parts = occurred_info.split('-')
-    print(parts[0])
     start_date = to_date(parts[0])
     if len(parts) == 1:
         end_date = None
@@ -85,7 +92,6 @@ def get_page(base_url, offset):
 
     Return the HTML content of the page.
     """
-    # TODO: How do we detect an invalid offset?
     url = base_url % offset
     response = requests.get(url)
     return response.text
@@ -128,10 +134,14 @@ def scrape_criminal_page(offset):
     html = get_page(CRIMINAL_LOGS_URL, offset)
     # Parse the HTML for individual police logs.
     records = scrape_page(html)
-    # Save all of the records in the DB.
+    # Save all of the records into the DB.
+    new_records = 0
     for record in records:
-        db.criminal_logs.insert(record)
-    return len(records)
+        # Overwrite existing logs with the same case number.
+        result = db.criminal_logs.update_one({'case_number': record['case_number']}, {'$set': record}, upsert=True)
+        # Increment `new_records` if we inserted (but not if we updated).
+        new_records += 1 - result.matched_count
+    return new_records, len(records)
 
 def scrape_non_criminal_page(html):
     """
@@ -149,17 +159,28 @@ def scrape_non_criminal_page(html):
     # Parse the HTML For individual police logs.
     records = scrape_page(html)
     # Save all of the records into the DB.
+    new_records = 0
     for record in records:
         # Overwrite existing logs with the same case number.
-        db.non_criminal_logs.update({'case_number': record['case_number']}, record, {'upsert': True})
-    return len(records)
+        result = db.non_criminal_logs.update_one({'case_number': record['case_number']}, {'$set': record}, upsert=True)
+        # Increment `new_records` if we inserted (but not if we updated).
+        new_records += 1 - result.matched_count
+    return new_records, len(records)
 
 def main():
     # TODO: Call scrape_[non]_criminal_page(offset) in a loop.
-    # TODO: When should we terminate?
-    # TODO: What if there's an error?
-    records_found = scrape_criminal_page(0)
-    print('Scraped %d records' % records_found)
+    # Keep scraping pages until no new records are found.
+    # When we hit the end of the list (or the beginning of the list we've already processed),
+    # we will add 0 new records.
+    # NOTE: If something goes awry, temporary change this value to whatever the last value it printed was.
+    offset = 4100
+    new_records = -1
+    while new_records != 0:
+        # There's 100 records on every page. Don't question it.
+        print('Scraping records from %d to %d' % (offset, offset + 100))
+        new_records, total_records = scrape_criminal_page(offset)
+        offset += total_records
+    print('Stopping becuase there are no new records to crawl.')
 
 # Run main() if we're directly running this file.
 if __name__ == '__main__':
