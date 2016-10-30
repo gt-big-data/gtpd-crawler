@@ -11,9 +11,9 @@ You need:
 
 ### Python Packages
 
-You also need the following Python packages:
+You also need a few Python packages:
 
-    pip install requests pymongo bs4
+    pip install -r requirements.txt
 
 ## Run the crawler
 
