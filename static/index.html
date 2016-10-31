@@ -7,21 +7,27 @@
 		<title>GTPD Crime Logs</title>
 
 		<link href="https://cdn.jsdelivr.net/min/1.5/min.min.css" rel="stylesheet" type="text/css">
-    <link href="style.css" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+		<link href="style.css" rel="stylesheet" type="text/css">
 	</head>
 	<body>
 		<div class="container">
 			<h1>GTPD Crime Logs</h1>
       <p>An adventurous/bored person will write a brief description of the project here.</p>
 
+			<h2>Total crimes ever</h2>
+			<div id="chart-crimes-total"></div>
+
       <h2>Total crimes by year</h2>
       <p>The following graph shows the number of GTPD crime logs by year since 2006.</p>
-      <div id="crimes-by-year"></div>
+      <div id="chart-crimes-by-year"></div>
 
       <h2>Crimes by month</h2>
       <p>It might be interesting to see if crimes following interesting patterns every year</p>
-      <div id="crimes-by-month"></div>
+      <div id="chart-crimes-by-month"></div>
 		</div>
+		<script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+		<script src="/lib/chartist-plugin-pointlabels.js"></script>
 		<script src="/charts.js"></script>
 	</body>
 </html>
