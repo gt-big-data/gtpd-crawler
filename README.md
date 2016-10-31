@@ -21,4 +21,14 @@ In a separate terminal window, run `mongod` to start MongoDB on your local compu
 
 Then run:
 
-    python crawler.py
+    ./scripts/run.[sh|bat]
+
+# Importing and Exporting Data
+
+Data can be imported to your local MongoDB by running:
+
+    ./scripts/import_mongo.[sh|bat]
+
+Data can be saved to the repository with:
+
+    ./scripts/export_mongo.[sh|bat]
