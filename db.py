@@ -1,4 +1,4 @@
-from pymongo import MongoClient as _MongoClient
+from pymongo import MongoClient as _MongoClient, TEXT as _TEXT
 
 # Nothing outside of this file should touch variables that start with _underscores.
 # Note that all of the scripts expect the database to be at localhost
@@ -15,3 +15,6 @@ non_criminal_logs = _db['non_criminal_logs']
 # Add some indexes to make a bunch of operations way faster.
 criminal_logs.create_index('case_number')
 non_criminal_logs.create_index('case_number')
+
+criminal_logs.create_index([('nature', _TEXT)])
+non_criminal_logs.create_index([('nature', _TEXT)])
