@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This file is the main driver the crawls GTPD logs and stores things in the database.
 import re
 from datetime import datetime
@@ -57,15 +59,28 @@ def parse_occurred_info(occurred_info):
 CURRENT_YEAR = datetime.now().year
 
 def is_valid(data):
-    for value in data.values():
-        if value is None:
-            return False
-        if '__len__' in dir(value):
-            if len(value) == 0:
-                return False
-        if 'year' in dir(value):
-            if value.year < 2006 or value.year > CURRENT_YEAR:
-                return False
+    # Make sure key dates aren't None.
+    if data['date_started'] is None or data['date_reported'] is None:
+        return False
+    # Make sure all of the dates are sane.
+    date_started_year = data['date_started'].year
+    date_reported_year = data['date_reported'].year
+    if date_started_year < 2006 or date_started_year > CURRENT_YEAR:
+        print('Invalid date started: %s' % data['date_started'])
+        return False
+    if date_reported_year < 2006 or date_reported_year > CURRENT_YEAR:
+        print('Invalid date reported: %s' % data['date_reported'])
+        return False
+
+    # Make sure case_number makes sense
+    if data['case_number'] is None or len(data['case_number']) == 0:
+        print('Invalid case number: %s' % data['case_number'])
+        return False
+
+    # Several fields, notably date_ended, disposition, and location can be empty/null
+    # and still be considered valid. Otherwise we'd have to remove too many records.
+
+    # We've made it past all of the checks so consider the data valid.
     return True
 
 def parse_record(row_1, row_2):
@@ -84,11 +99,12 @@ def parse_record(row_1, row_2):
     cells = row_1.find_all('td')
     date_started, date_ended = parse_occurred_info(cells[2].text)
     location, nature = row_2.text.split('Nature:')
+    date_reported, _ = parse_occurred_info(cells[1].text)
     nature = nature
     location = location.split('Location:')[1]
     data = {
         'case_number': clean(cells[0].text),
-        'date_reported': parse_occurred_info(cells[1].text),
+        'date_reported': date_reported,
         'date_started': date_started,
         'date_ended': date_ended,
         'disposition': clean(cells[3].text),
@@ -189,10 +205,6 @@ def print_usage():
     return -1
 
 def fix(record):
-    # Convert older date_reported fields into date objects.
-    if 'split' in dir(record['date_reported']):
-        record['date_reported'], _ = parse_occurred_info(record['date_reported'])
-
     record['valid'] = is_valid(record)
     return record
 
@@ -243,5 +255,5 @@ def main():
 
 # Run main() if we're directly running this file.
 if __name__ == '__main__':
-    update()
-    # main()
+    # update()
+    main()

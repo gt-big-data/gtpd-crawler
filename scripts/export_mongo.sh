@@ -1,3 +1,3 @@
 #!/bin/sh
 
-mongodump --db gtpd_logs
+mongodump --db gtpd_logs --gzip

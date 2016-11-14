@@ -21,14 +21,14 @@ In a separate terminal window, run `mongod` to start MongoDB on your local compu
 
 Then run:
 
-    ./scripts/run.[sh|bat]
+    ./scripts/run.sh or scripts\run.bat
 
 # Importing and Exporting Data
 
 Data can be imported to your local MongoDB by running:
 
-    ./scripts/import_mongo.[sh|bat]
+    ./scripts/import_mongo.sh or scripts\import_mongo.bat
 
 Data can be saved to the repository with:
 
-    ./scripts/export_mongo.[sh|bat]
+    ./scripts/export_mongo.sh or scripts\export_mongo.bat
