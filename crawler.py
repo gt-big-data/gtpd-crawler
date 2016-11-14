@@ -188,6 +188,33 @@ def print_usage():
     print(argv[0] + ' <criminal/non-criminal> [offset]')
     return -1
 
+def fix(record):
+    # Convert older date_reported fields into date objects.
+    if 'split' in dir(record['date_reported']):
+        record['date_reported'], _ = parse_occurred_info(record['date_reported'])
+
+    record['valid'] = is_valid(record)
+    return record
+
+def update():
+    print('Updating non-criminal logs.')
+    i = 0
+    for record in db.non_criminal_logs.find():
+        if i % 1000 == 0:
+            print(i)
+        record = fix(record)
+        db.non_criminal_logs.update_one({'case_number': record['case_number']}, {'$set': record})
+        i += 1
+
+    i = 0
+    for record in db.criminal_logs.find():
+        if i % 1000 == 0:
+            print(i)
+        record = fix(record)
+        db.criminal_logs.update_one({'case_number': record['case_number']}, {'$set': record})
+        i += 1
+    print('Updating criminal logs.')
+
 def main():
     if len(argv) < 2:
         return print_usage()
@@ -216,4 +243,5 @@ def main():
 
 # Run main() if we're directly running this file.
 if __name__ == '__main__':
-    main()
+    update()
+    # main()
