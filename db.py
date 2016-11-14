@@ -11,3 +11,7 @@ _db = _client['gtpd_logs']
 # The two collections with data are exposed publicly.
 criminal_logs = _db['criminal_logs']
 non_criminal_logs = _db['non_criminal_logs']
+
+# Add some indexes to make a bunch of operations way faster.
+criminal_logs.create_index('case_number')
+non_criminal_logs.create_index('case_number')

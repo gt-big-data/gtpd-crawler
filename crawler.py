@@ -54,6 +54,20 @@ def parse_occurred_info(occurred_info):
         end_date = to_date(parts[1])
     return start_date, end_date
 
+CURRENT_YEAR = datetime.now().year
+
+def is_valid(data):
+    for value in data.values():
+        if value is None:
+            return False
+        if '__len__' in dir(value):
+            if len(value) == 0:
+                return False
+        if 'year' in dir(value):
+            if value.year < 2006 or value.year > CURRENT_YEAR:
+                return False
+    return True
+
 def parse_record(row_1, row_2):
     """
     Convert two rows of HTML into a single object.
@@ -74,7 +88,7 @@ def parse_record(row_1, row_2):
     location = location.split('Location:')[1]
     data = {
         'case_number': clean(cells[0].text),
-        'date_reported': clean(cells[1].text),
+        'date_reported': parse_occurred_info(cells[1].text),
         'date_started': date_started,
         'date_ended': date_ended,
         'disposition': clean(cells[3].text),
@@ -82,6 +96,7 @@ def parse_record(row_1, row_2):
         'location': clean(location),
         'nature': clean(nature)
     }
+    data['valid'] = is_valid(data)
     return data
 
 def get_page(base_url, offset):
